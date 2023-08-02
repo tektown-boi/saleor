@@ -6,7 +6,10 @@ import pytest
 from django.utils.functional import SimpleLazyObject
 from freezegun import freeze_time
 
-from ....attribute.utils import associate_attribute_values_to_instance
+from ....attribute.utils import (
+    associate_attribute_values_to_instance,
+    get_product_attributes,
+)
 from ....permission.models import Permission
 from ....tests.utils import dummy_editorjs
 from ....webhook.event_types import WebhookEventAsyncType
@@ -3525,7 +3528,7 @@ def test_product_and_attribute_translation(user_api_client, product, channel_USD
     product.translations.create(
         language_code="pl", name="Produkt", description=description
     )
-    assigned_attribute = product.attributes.first()
+    assigned_attribute = get_product_attributes(product).first()
     attribute = assigned_attribute.attribute
     attribute.translations.create(language_code="pl", name="Kolor")
 

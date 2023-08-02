@@ -16,7 +16,11 @@ from text_unidecode import unidecode
 
 from ...attribute import AttributeEntityType, AttributeInputType, AttributeType
 from ...attribute import models as attribute_models
-from ...attribute.utils import associate_attribute_values_to_instance
+from ...attribute.utils import (
+    associate_attribute_values_to_instance,
+    disassociate_attributes_from_instance,
+    get_product_attribute_values,
+)
 from ...core.utils import generate_unique_slug, prepare_unique_slug
 from ...core.utils.editorjs import clean_editor_js
 from ...core.utils.url import get_default_storage_root_url
@@ -60,7 +64,9 @@ class AttrValuesInput:
     date_time: Optional[datetime.datetime] = None
 
 
-T_INSTANCE = Union[product_models.ProductVariant, page_models.Page]
+T_INSTANCE = Union[
+    product_models.Product, product_models.ProductVariant, page_models.Page
+]
 T_INPUT_MAP = List[Tuple[attribute_models.Attribute, AttrValuesInput]]
 T_ERROR_DICT = Dict[Tuple[str, str], List]
 
@@ -774,6 +780,80 @@ class AttributeAssignmentMixin:
             value.slug = generate_unique_slug(value, name)
             value.save()
         return (value,)
+
+
+class ProductAttributeAssignmentMixin(AttributeAssignmentMixin):
+    # TODO: merge the code here with the mixin above
+    # when all attribute relations are cleaned up
+
+    @classmethod
+    def _get_assigned_attribute_value_if_exists(
+        cls,
+        instance: T_INSTANCE,
+        attribute: attribute_models.Attribute,
+        lookup_field: str,
+        value,
+    ):
+        return get_product_attribute_values(instance, attribute).first()
+
+    @classmethod
+    def save(cls, instance: T_INSTANCE, cleaned_input: T_INPUT_MAP):
+        """Save the cleaned input into the database against the given instance.
+
+        Note: this should always be ran inside a transaction.
+
+        :param instance: the product or variant to associate the attribute against.
+        :param cleaned_input: the cleaned user input (refer to clean_attributes)
+        """
+        pre_save_methods_mapping = {
+            AttributeInputType.BOOLEAN: cls._pre_save_boolean_values,
+            AttributeInputType.DATE: cls._pre_save_date_time_values,
+            AttributeInputType.DATE_TIME: cls._pre_save_date_time_values,
+            AttributeInputType.DROPDOWN: cls._pre_save_dropdown_value,
+            AttributeInputType.SWATCH: cls._pre_save_swatch_value,
+            AttributeInputType.FILE: cls._pre_save_file_value,
+            AttributeInputType.NUMERIC: cls._pre_save_numeric_values,
+            AttributeInputType.MULTISELECT: cls._pre_save_multiselect_values,
+            AttributeInputType.PLAIN_TEXT: cls._pre_save_plain_text_values,
+            AttributeInputType.REFERENCE: cls._pre_save_reference_values,
+            AttributeInputType.RICH_TEXT: cls._pre_save_rich_text_values,
+        }
+        clean_assignment = []
+        attr_and_value_slugs_map = {}
+
+        for attribute, _ in cleaned_input:
+            if attribute not in attr_and_value_slugs_map:
+                attr_and_value_slugs_map[attribute] = set(
+                    attribute.values.all().values_list("slug", flat=True)
+                )
+
+        for attribute, attr_values in cleaned_input:
+            is_handled_by_values_field = (
+                attr_values.values
+                and attribute.input_type
+                in (
+                    AttributeInputType.DROPDOWN,
+                    AttributeInputType.MULTISELECT,
+                    AttributeInputType.SWATCH,
+                )
+            )
+            if is_handled_by_values_field:
+                attribute_values = cls._pre_save_values(attribute, attr_values)
+            else:
+                pre_save_func = pre_save_methods_mapping[attribute.input_type]
+                attribute_values = pre_save_func(
+                    instance, attribute, attr_values, attr_and_value_slugs_map
+                )
+
+            associate_attribute_values_to_instance(
+                instance, attribute, *attribute_values
+            )
+            if not attribute_values:
+                clean_assignment.append(attribute)
+
+        # drop attribute assignment model when values are unassigned from instance
+        if clean_assignment:
+            disassociate_attributes_from_instance(instance, *clean_assignment)
 
 
 def get_variant_selection_attributes(qs: "QuerySet") -> "QuerySet":

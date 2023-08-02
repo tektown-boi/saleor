@@ -46,7 +46,7 @@ def get_default_images_payload(images: List[ProductMedia]):
 
 
 def get_product_attributes(product):
-    attributes = product.attributes.all()
+    attributes = get_product_attributes(product)
     attributes_payload = []
     for attr in attributes:
         attributes_payload.append(

@@ -1,12 +1,13 @@
 from .....attribute import AttributeInputType
+from .....attribute.utils import get_product_attribute_values, get_product_attributes
 from .....core.utils.editorjs import clean_editor_js
 
 
 def add_product_attribute_data_to_expected_data(data, product, attribute_ids, pk=None):
-    for attribute in product.attributes.all():
+    for attribute in get_product_attributes(product):
         header = f"{attribute.slug} (product attribute)"
         if str(attribute.pk) in attribute_ids:
-            value_instance = attribute.values.first()
+            value_instance = get_product_attribute_values(product, attribute).first()
             value = get_attribute_value(attribute, value_instance)
             if pk:
                 data[pk][header] = value

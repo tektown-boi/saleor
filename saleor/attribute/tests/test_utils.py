@@ -1,7 +1,7 @@
 import pytest
 
 from ...product.models import ProductType
-from ..utils import associate_attribute_values_to_instance
+from ..utils import associate_attribute_values_to_instance, get_product_attributes
 
 
 def test_associate_attribute_to_non_product_instance(color_attribute):
@@ -33,7 +33,7 @@ def test_associate_attribute_to_product_instance_from_different_attribute(
 
 def test_associate_attribute_to_product_instance_without_values(product):
     """Ensure clearing the values from a product is properly working."""
-    attribute = product.attributes.first()
+    attribute = get_product_attributes(product).first()
     assert attribute is not None, "Product doesn't have attributes assigned"
     assert product.attributevalues.count() == 1, "Product doesn't have attribute-values"
 
@@ -41,7 +41,7 @@ def test_associate_attribute_to_product_instance_without_values(product):
     associate_attribute_values_to_instance(product, attribute)
 
     # Ensure the values were cleared and no new assignment entry was created
-    assert product.attributes.count() == 1
+    assert get_product_attributes(product).count() == 1
     assert product.attributevalues.count() == 0
 
 
@@ -49,7 +49,7 @@ def test_associate_attribute_to_product_instance_multiple_values(
     product, attribute_value_generator
 ):
     """Ensure multiple values in proper order are assigned."""
-    attribute = product.attributes.first()
+    attribute = get_product_attributes(product).first()
     assert attribute is not None, "Product doesn't have attributes assigned"
     assert product.attributevalues.count() == 1, "Product doesn't have attribute-values"
 

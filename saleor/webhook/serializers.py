@@ -5,6 +5,7 @@ import graphene
 from prices import Money
 
 from ..attribute import AttributeEntityType, AttributeInputType
+from ..attribute.utils import get_product_attribute_values, get_product_attributes
 from ..checkout import base_calculations
 from ..checkout.fetch import fetch_checkout_lines
 from ..core.prices import quantize_price
@@ -122,7 +123,7 @@ def serialize_product_attributes(product: "Product") -> List[Dict]:
         reference_id = graphene.Node.to_global_id(attribute.entity_type, reference_pk)
         return reference_id
 
-    for attribute in product.attributes.all():
+    for attribute in get_product_attributes(product):
         attr_id = graphene.Node.to_global_id("Attribute", attribute.id)
         attr_data: Dict[Any, Any] = {
             "name": attribute.name,
@@ -134,9 +135,7 @@ def serialize_product_attributes(product: "Product") -> List[Dict]:
             "values": [],
         }
 
-        attr_values = attribute.values.filter(
-            productvalueassignment__product_id=product.id
-        )
+        attr_values = get_product_attribute_values(product, attribute)
         for attr_value in attr_values:
             attr_slug = attr_value.slug
             value: Dict[

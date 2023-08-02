@@ -1,7 +1,7 @@
 import graphene
 
 from .....attribute import AttributeType
-from .....attribute.models import Attribute
+from .....attribute.models import AssignedProductAttributeValue, Attribute
 from .....attribute.utils import associate_attribute_values_to_instance
 from ....tests.utils import get_graphql_content
 
@@ -90,7 +90,6 @@ def test_attributes_of_products_are_sorted_on_variant(
     m2m_rel_other_attr.save(update_fields=["sort_order"])
 
     # Assign attributes to the product
-    variant.attributesrelated.clear()
     associate_attribute_values_to_instance(
         variant, color_attribute, color_attribute.values.first()
     )
@@ -150,6 +149,7 @@ def test_attributes_of_products_are_sorted_on_product(
     m2m_rel_other_attr.save(update_fields=["sort_order"])
 
     # Assign attributes to the product
+    AssignedProductAttributeValue.objects.filter(product_id=product.pk).delete()
     associate_attribute_values_to_instance(
         product, color_attribute, color_attribute.values.first()
     )

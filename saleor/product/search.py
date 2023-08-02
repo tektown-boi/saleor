@@ -5,7 +5,8 @@ from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import F, Q, Value, prefetch_related_objects
 
 from ..attribute import AttributeInputType
-from ..attribute.models import Attribute, AttributeValue
+from ..attribute.models import Attribute
+from ..attribute.utils import get_product_attribute_values, get_product_attributes
 from ..core.postgres import FlatConcatSearchVector, NoValidationSearchVector
 from ..core.utils.editorjs import clean_editor_js
 from .models import Product
@@ -110,13 +111,15 @@ def generate_attributes_search_vector_value(
     and `assignment__attribute`.
     """
 
-    attributes = product.attributes.all()[: settings.PRODUCT_MAX_INDEXED_ATTRIBUTES]
+    attributes = get_product_attributes(product)[
+        : settings.PRODUCT_MAX_INDEXED_ATTRIBUTES
+    ]
     search_vectors = []
 
     for attribute in attributes:
-        values = AttributeValue.objects.filter(
-            attribute_id=attribute.pk, productvalueassignment__product_id=product.id
-        )[: settings.PRODUCT_MAX_INDEXED_ATTRIBUTE_VALUES]
+        values = get_product_attribute_values(product, attribute)[
+            : settings.PRODUCT_MAX_INDEXED_ATTRIBUTE_VALUES
+        ]
 
         search_vectors += get_search_vectors_for_values(attribute, values)
     return search_vectors

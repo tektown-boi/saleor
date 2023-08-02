@@ -4,7 +4,10 @@ import graphene
 import pytest
 from graphene import Node
 
-from .....attribute.utils import associate_attribute_values_to_instance
+from .....attribute.utils import (
+    associate_attribute_values_to_instance,
+    get_product_attributes,
+)
 from .....core.taxes import TaxType
 from .....plugins.manager import PluginsManager
 from .....product.models import ProductMedia, ProductTranslation
@@ -580,7 +583,7 @@ def test_filter_products_by_attributes(
     api_client, product_list, channel_USD, count_queries
 ):
     product = product_list[0]
-    attr_assignment = product.attributes.first()
+    attr_assignment = get_product_attributes(product).first()
     attr = attr_assignment.attribute
     variables = {
         "channel": channel_USD.slug,

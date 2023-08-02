@@ -2,7 +2,10 @@ from datetime import datetime
 from unittest.mock import patch
 
 from .....attribute.models import Attribute, AttributeValue
-from .....attribute.utils import associate_attribute_values_to_instance
+from .....attribute.utils import (
+    associate_attribute_values_to_instance,
+    get_product_attributes,
+)
 from .....product.models import Product, ProductMedia, ProductVariant, VariantMedia
 from .....tests.utils import dummy_editorjs
 from .....warehouse.models import Warehouse
@@ -186,10 +189,9 @@ def test_prepare_products_relations_data(
         ProductExportFields.HEADERS_TO_FIELDS_MAPPING["product_many_to_many"].values()
     )
     attribute_ids = [
-        str(attr.assignment.attribute.pk)
-        for attr in product_with_image.attributes.all()
+        attr.assignment.attribute.pk for attr in product_with_image.attributes.all()
     ]
-    channel_ids = [str(channel_PLN.pk), str(channel_USD.pk)]
+    channel_ids = [channel_PLN.pk, str(channel_USD.pk)]
 
     # when
     result = prepare_products_relations_data(qs, fields, attribute_ids, channel_ids)
@@ -301,7 +303,7 @@ def test_prepare_products_relations_data_attribute_without_values(
     # given
     pk = product.pk
 
-    attribute_product = product.attributes.first()
+    attribute_product = get_product_attributes(product).first()
     attribute_product.values.clear()
     attribute = attribute_product.assignment.attribute
 

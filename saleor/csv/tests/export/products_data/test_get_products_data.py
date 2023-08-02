@@ -4,7 +4,10 @@ import graphene
 from measurement.measures import Weight
 
 from .....attribute.models import Attribute, AttributeValue
-from .....attribute.utils import associate_attribute_values_to_instance
+from .....attribute.utils import (
+    associate_attribute_values_to_instance,
+    get_product_attributes,
+)
 from .....channel.models import Channel
 from .....product.models import Product, ProductVariant, VariantMedia
 from .....warehouse.models import Warehouse
@@ -413,7 +416,7 @@ def test_get_products_data_for_specified_warehouses_channels_and_attributes(
     associate_attribute_values_to_instance(
         product, color_attribute, color_attribute.values.first()
     )
-    assigned_product = product.attributes.get(assignment__attribute=color_attribute)
+    assigned_product = get_product_attributes(product).get(color_attribute)
     assigned_product.values.clear()
 
     # add swatch attribute

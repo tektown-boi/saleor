@@ -9,11 +9,64 @@ from .models import (
     AssignedVariantAttribute,
     AssignedVariantAttributeValue,
     Attribute,
+    AttributeProduct,
     AttributeValue,
 )
 
 AttributeAssignmentType = Union[AssignedVariantAttribute, AssignedPageAttribute]
 T_INSTANCE = Union[Product, ProductVariant, Page]
+
+
+def get_product_attributes(product: Product):
+    """Get product attributes filtered by product_type.
+
+    ProductType defines which attributes can be assigned to a product and
+    we have to filter out the attributes on the instance by the ones attached to the
+    product_type.
+    """
+
+    return Attribute.objects.filter(
+        attributeproduct__product_type_id=product.product_type_id,
+    ).order_by("attributeproduct__sort_order")
+
+
+def get_product_attribute_values(product: Product, attribute: Attribute):
+    """Get product attributes filtered by product_type.
+
+    ProductType defines which attributes can be assigned to a product and
+    we have to filter out the attributes on the instance by the ones attached to the
+    product_type.
+    """
+    return AttributeValue.objects.filter(
+        productvalueassignment__product_id=product.pk, attribute_id=attribute.pk
+    )
+
+
+def disassociate_all_attributes_from_instance(
+    instance: Product,
+) -> None:
+    """Remove all attribute assigned to an instance.
+
+    This has to remove a FK to Attributes from Product instance and
+    remove all value assignments related to that same product.
+    """
+    instance.attributes.clear()
+    AssignedProductAttributeValue.objects.filter(product_id=instance.pk).delete()
+
+
+def disassociate_attributes_from_instance(
+    instance: Product,
+    *attributes: Attribute,
+) -> None:
+    """Remove attribute assigned to an instance.
+
+    This has to remove a FK to Attribute from Product instance and
+    remove all value assignments related to that same product and attribute.
+    """
+    instance.attributes.remove(*attributes)
+    AssignedProductAttributeValue.objects.filter(
+        product_id=instance.pk, value__attribute__in=attributes
+    ).delete()
 
 
 def associate_attribute_values_to_instance(
@@ -34,6 +87,26 @@ def associate_attribute_values_to_instance(
 
     # Associate the attribute and the passed values
     return _associate_attribute_to_instance(instance, attribute, *values)
+
+
+def validate_product_type_owns_attribute(
+    instance: Product, *attributes: Attribute
+) -> None:
+    """Check given value IDs are belonging to the given attribute.
+
+    :raise: AssertionError
+    """
+    allowed_attribute_ids = list(
+        AttributeProduct.objects.filter(
+            product_type_id=instance.product_type_id
+        ).values_list("attribute_id", flat=True)
+    )
+    attribute_ids_to_check = [attribute.pk for attribute in attributes]
+    found_associated_ids = allowed_attribute_ids & attribute_ids_to_check
+    if found_associated_ids != attribute_ids_to_check:
+        raise AssertionError(
+            "Some attributes are not assigned to the associated ProductType."
+        )
 
 
 def validate_attribute_owns_values(attribute: Attribute, value_ids: Set[int]) -> None:
@@ -67,12 +140,10 @@ def _associate_attribute_to_instance(
     if isinstance(instance, Product):
         instance.attributes.add(attribute)
 
-        # TODO: move the below to a separate helper function
-
-        # Clear assignments
+        # Clear all assignments that don't match the values we'd like to assign
         AssignedProductAttributeValue.objects.filter(
-            product=instance, value__attribute_id=attribute.pk
-        ).delete()
+            product_id=instance.pk, value__attribute=attribute
+        ).exclude(value__in=values).delete()
 
         # Create new assignments
         for value in values:
@@ -130,6 +201,7 @@ def sort_assigned_attribute_values_using_assignment(
     values_assignment = list(
         getattr(assignment, assignment_lookup).select_related("value")
     )
+
     values_assignment.sort(key=lambda e: values_pks.index(e.value.pk))
     for index, value_assignment in enumerate(values_assignment):
         value_assignment.sort_order = index
@@ -145,9 +217,12 @@ def sort_assigned_attribute_values(
     values_pks = [value.pk for value in values]
 
     values_assignment = list(
-        instance.attributevalues.filter(value__attribute_id=attribute.pk)
+        AssignedProductAttributeValue.objects.filter(
+            value__attribute_id=attribute.pk, product_id=instance.pk
+        ).select_related("value")
     )
-    values_assignment.sort(key=lambda e: values_pks.index(e.value_id))
+
+    values_assignment.sort(key=lambda e: values_pks.index(e.value.pk))
     for index, value_assignment in enumerate(values_assignment):
         value_assignment.sort_order = index
 

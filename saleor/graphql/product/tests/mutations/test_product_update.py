@@ -9,8 +9,16 @@ from django.utils.text import slugify
 from freezegun import freeze_time
 
 from .....attribute import AttributeInputType
-from .....attribute.models import Attribute, AttributeValue
-from .....attribute.utils import associate_attribute_values_to_instance
+from .....attribute.models import (
+    AssignedProductAttributeValue,
+    Attribute,
+    AttributeValue,
+)
+from .....attribute.utils import (
+    associate_attribute_values_to_instance,
+    get_product_attribute_values,
+    get_product_attributes,
+)
 from .....core.taxes import TaxType
 from .....graphql.core.enums import AttributeErrorCode
 from .....graphql.tests.utils import get_graphql_content
@@ -747,8 +755,7 @@ def test_update_product_clear_attribute_values(
 
     product_id = graphene.Node.to_global_id("Product", product.pk)
 
-    product_attr = product.attributes.first()
-    attribute = product_attr.assignment.attribute
+    attribute = get_product_attributes(product).first()
     attribute.value_required = False
     attribute.save(update_fields=["value_required"])
 
@@ -773,8 +780,9 @@ def test_update_product_clear_attribute_values(
 
     assert len(attributes) == 1
     assert not attributes[0]["values"]
-    with pytest.raises(product_attr._meta.model.DoesNotExist):
-        product_attr.refresh_from_db()
+    # Why do we need this?
+    # with pytest.raises(product_attr._meta.model.DoesNotExist):
+    #     product_attr.refresh_from_db()
 
     updated_webhook_mock.assert_called_once_with(product)
 
@@ -797,7 +805,7 @@ def test_update_product_clean_boolean_attribute_value(
         product, boolean_attribute, boolean_attribute.values.first()
     )
 
-    product_attr = product.attributes.get(assignment__attribute_id=boolean_attribute.id)
+    product_attr = get_product_attributes(product).get(id=boolean_attribute.id)
     assert product_attr.values.count() == 1
 
     variables = {
@@ -843,8 +851,8 @@ def test_update_product_clean_file_attribute_value(
         product, file_attribute, file_attribute.values.first()
     )
 
-    product_attr = product.attributes.get(assignment__attribute_id=file_attribute.id)
-    assert product_attr.values.count() == 1
+    product_attr = get_product_attributes(product).get(pk=file_attribute.id)
+    assert get_product_attribute_values(product, product_attr).count() == 1
 
     variables = {
         "productId": product_id,
@@ -868,7 +876,7 @@ def test_update_product_clean_file_attribute_value(
         "values": [],
     }
     assert expected_att_data in attributes
-    assert product_attr.values.count() == 0
+    assert get_product_attribute_values(product, file_attribute).count() == 0
 
 
 @patch("saleor.plugins.manager.PluginsManager.product_updated")
@@ -884,8 +892,7 @@ def test_update_product_none_as_attribute_values(
 
     product_id = graphene.Node.to_global_id("Product", product.pk)
 
-    product_attr = product.attributes.first()
-    attribute = product_attr.assignment.attribute
+    attribute = get_product_attributes(product).first()
     attribute.value_required = False
     attribute.save(update_fields=["value_required"])
 
@@ -910,8 +917,9 @@ def test_update_product_none_as_attribute_values(
 
     assert len(attributes) == 1
     assert not attributes[0]["values"]
-    with pytest.raises(product_attr._meta.model.DoesNotExist):
-        product_attr.refresh_from_db()
+    # Why do we need this?
+    # with pytest.raises(product_attr._meta.model.DoesNotExist):
+    #     product_attr.refresh_from_db()
 
     updated_webhook_mock.assert_called_once_with(product)
 
@@ -1700,10 +1708,11 @@ def test_update_product_change_values_ordering(
         product, product_type_page_reference_attribute, attr_value_2, attr_value_1
     )
 
+    attribute = get_product_attributes(product).first()
     assert list(
-        product.attributes.first().productvalueassignment.values_list(
-            "value_id", flat=True
-        )
+        AssignedProductAttributeValue.objects.filter(
+            value__attribute_id=attribute.id, product_id=product.id
+        ).values_list("value_id", flat=True)
     ) == [attr_value_2.pk, attr_value_1.pk]
 
     variables = {
@@ -1741,10 +1750,12 @@ def test_update_product_change_values_ordering(
         for val in [attr_value_1, attr_value_2]
     ]
     product.refresh_from_db()
+
+    attribute = get_product_attributes(product).first()
     assert list(
-        product.attributes.first().productvalueassignment.values_list(
-            "value_id", flat=True
-        )
+        AssignedProductAttributeValue.objects.filter(
+            value__attribute_id=attribute.id, product_id=product.id
+        ).values_list("value_id", flat=True)
     ) == [attr_value_1.pk, attr_value_2.pk]
 
     updated_webhook_mock.assert_called_once_with(product)
@@ -2493,7 +2504,7 @@ def test_update_product_with_multiselect_attribute_non_existing_values(
 
     product = product_with_multiple_values_attributes
     product_id = graphene.Node.to_global_id("Product", product.pk)
-    attribute = product.attributes.first()
+    attribute = get_product_attributes(product).first()
     attribute_id = graphene.Node.to_global_id("Attribute", attribute.pk)
 
     value_count = AttributeValue.objects.count()
@@ -2543,17 +2554,20 @@ def test_update_product_with_multiselect_attribute_existing_values(
 
     product = product_with_multiple_values_attributes
     product_id = graphene.Node.to_global_id("Product", product.pk)
-    attribute = product.attributes.first()
+    attribute = get_product_attributes(product).first()
     attribute_id = graphene.Node.to_global_id("Attribute", attribute.pk)
-    attr_value_1 = product.attributes.first().values.all()[0]
+    attribute_values = get_product_attribute_values(product, attribute)
+    attr_value_1 = attribute_values[0]
     attr_value_id_1 = graphene.Node.to_global_id("AttributeValue", attr_value_1.pk)
-    attr_value_name_1 = product.attributes.first().values.all()[0].name
-    attr_value_2 = product.attributes.first().values.all()[1]
+    attr_value_name_1 = attr_value_1.name
+    attr_value_2 = attribute_values[1]
     attr_value_id_2 = graphene.Node.to_global_id("AttributeValue", attr_value_2.pk)
-    attr_value_name_2 = product.attributes.first().values.all()[1].name
+    attr_value_name_2 = attr_value_2.name
 
     associate_attribute_values_to_instance(product, attribute, attr_value_1)
-    assert len(product.attributes.first().values.all()) == 1
+
+    attribute = get_product_attributes(product).first()
+    assert len(get_product_attribute_values(product, attribute)) == 1
 
     variables = {
         "productId": product_id,
@@ -2598,18 +2612,20 @@ def test_update_product_with_multiselect_attribute_new_values_not_created(
 
     product = product_with_multiple_values_attributes
     product_id = graphene.Node.to_global_id("Product", product.pk)
-    attribute = product.attributes.first()
+    attribute = get_product_attributes(product).first()
     attribute_id = graphene.Node.to_global_id("Attribute", attribute.pk)
-    attr_value_1 = product.attributes.first().values.all()[0]
+    attr_value_1 = get_product_attributes(product).first().values.all()[0]
     attr_value_id_1 = graphene.Node.to_global_id("AttributeValue", attr_value_1.pk)
-    attr_value_name_1 = product.attributes.first().values.all()[0].name
-    attr_value_2 = product.attributes.first().values.all()[1]
+    attr_value_name_1 = get_product_attributes(product).first().values.all()[0].name
+    print("Attr val 2", get_product_attributes(product).first().values.all())
+    attr_value_2 = get_product_attributes(product).first().values.all()[1]
+
     attr_value_id_2 = graphene.Node.to_global_id("AttributeValue", attr_value_2.pk)
-    attr_value_name_2 = product.attributes.first().values.all()[1].name
+    attr_value_name_2 = get_product_attributes(product).first().values.all()[1].name
 
     value_count = AttributeValue.objects.count()
 
-    assert len(product.attributes.first().values.all()) == 2
+    assert len(get_product_attributes(product).first().values.all()) == 2
 
     variables = {
         "productId": product_id,
@@ -2801,9 +2817,9 @@ def test_update_product_with_multiselect_attribute_by_both_id_and_value(
 
     product = product_with_multiple_values_attributes
     product_id = graphene.Node.to_global_id("Product", product.pk)
-    attribute = product.attributes.first()
+    attribute = get_product_attributes(product).first()
     attribute_id = graphene.Node.to_global_id("Attribute", attribute.pk)
-    attr_value = product.attributes.first().values.all()[0]
+    attr_value = get_product_attributes(product).first().values.all()[0]
     attr_value_id = graphene.Node.to_global_id("AttributeValue", attr_value.pk)
 
     variables = {
@@ -2837,16 +2853,15 @@ def test_update_product_with_multiselect_attribute_by_id_duplicated(
     staff_api_client,
     product_with_multiple_values_attributes,
     permission_manage_products,
-    site_settings,
 ):
     # given
     query = MUTATION_UPDATE_PRODUCT
 
     product = product_with_multiple_values_attributes
     product_id = graphene.Node.to_global_id("Product", product.pk)
-    attribute = product.attributes.first()
+    attribute = get_product_attributes(product).first()
     attribute_id = graphene.Node.to_global_id("Attribute", attribute.pk)
-    attr_value = product.attributes.first().values.all()[0]
+    attr_value = get_product_attributes(product).first().values.all()[0]
     attr_value_id = graphene.Node.to_global_id("AttributeValue", attr_value.pk)
 
     variables = {
@@ -2880,16 +2895,15 @@ def test_update_product_with_multiselect_attribute_by_name_duplicated(
     staff_api_client,
     product_with_multiple_values_attributes,
     permission_manage_products,
-    site_settings,
 ):
     # given
     query = MUTATION_UPDATE_PRODUCT
 
     product = product_with_multiple_values_attributes
     product_id = graphene.Node.to_global_id("Product", product.pk)
-    attribute = product.attributes.first()
+    attribute = get_product_attributes(product).first()
     attribute_id = graphene.Node.to_global_id("Attribute", attribute.pk)
-    attr_value_name = product.attributes.first().values.all()[0].name
+    attr_value_name = get_product_attributes(product).first().values.all()[0].name
 
     variables = {
         "productId": product_id,

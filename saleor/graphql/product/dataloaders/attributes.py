@@ -3,13 +3,14 @@ from collections import defaultdict
 from promise import Promise
 
 from ....attribute.models import (
-    AssignedProductAttributeValue,
     AssignedVariantAttribute,
     AssignedVariantAttributeValue,
     AttributeProduct,
     AttributeVariant,
 )
+from ....attribute.utils import get_product_attribute_values, get_product_attributes
 from ....permission.enums import ProductPermissions
+from ....product.models import Product
 from ...attribute.dataloaders import AttributesByAttributeId, AttributeValueByIdLoader
 from ...core.dataloaders import DataLoader
 from ...utils import get_user_or_app_from_context
@@ -173,39 +174,36 @@ class AttributeValuesByProductIdLoader(DataLoader):
     def batch_load(self, keys):
         requestor = get_user_or_app_from_context(self.context)
 
-        qs = AssignedProductAttributeValue.objects.using(
-            self.database_connection_name
-        ).prefetch_related("value", "value__attribute")
+        products = Product.objects.filter(pk__in=keys)
 
-        if (
-            not requestor
-            or not requestor.is_active
-            or not requestor.has_perm(ProductPermissions.MANAGE_PRODUCTS)
-        ):
-            qs = qs.filter(value__attribute__visible_in_storefront=True)
+        assigned_product_map = defaultdict(list)
+        for product in products:
+            qs = get_product_attributes(product).using(self.database_connection_name)
 
-        # All AssignedProductAttributeValue objects for given product_ids
-        attribute_values = list(qs.filter(product_id__in=keys).iterator())
+            if not (
+                requestor
+                and requestor.is_active
+                and requestor.has_perm(ProductPermissions.MANAGE_PRODUCTS)
+            ):
+                qs = qs.filter(visible_in_storefront=True)
 
-        value_ids = [a.value_id for a in attribute_values]
+            for attribute in qs.iterator():
+                values = get_product_attribute_values(product, attribute).using(
+                    self.database_connection_name
+                )
+                # Replace with dataloader usage
+                # values = AttributeValueByIdLoader(self.context)
+                #     .load_many(value_ids)
+                #     .then(map_assignment_to_values)
 
-        def map_assignment_to_values(values):
-            value_map = dict(zip(value_ids, values))
-            assigned_product_map = defaultdict(list)
-            for attribute_value in attribute_values:
-                assigned_product_map[attribute_value.product_id].append(
+                assigned_product_map[product.id].append(
                     {
-                        "attribute": attribute_value.value.attribute,
-                        "values": [value_map.get(attribute_value.value_id)],
+                        "attribute": attribute,
+                        "values": values,
                     }
                 )
-            return [assigned_product_map[key] for key in keys]
 
-        return (
-            AttributeValueByIdLoader(self.context)
-            .load_many(value_ids)
-            .then(map_assignment_to_values)
-        )
+        return [assigned_product_map[key] for key in keys]
 
 
 class SelectedAttributesByProductIdLoader(DataLoader):
