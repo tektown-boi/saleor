@@ -39,7 +39,7 @@ def get_product_attribute_values(product: Product, attribute: Attribute):
     """
     return AttributeValue.objects.filter(
         productvalueassignment__product_id=product.pk, attribute_id=attribute.pk
-    )
+    ).order_by("productvalueassignment__sort_order")
 
 
 def disassociate_all_attributes_from_instance(
