@@ -112,11 +112,9 @@ def test_resolve_attribute_values(user_api_client, product, staff_user, channel_
     assert get_product_attributes(product).count() == 1
     assert variant.attributes.count() == 1
 
-    attribute = get_product_attributes(product)
+    attribute = get_product_attributes(product).first()
     product_attribute_values = list(
-        get_product_attribute_values(product, attribute).values_list(
-            "value__slug", flat=True
-        )
+        get_product_attribute_values(product, attribute).values_list("slug", flat=True)
     )
     variant_attribute_values = list(
         variant.attributes.first().values.values_list("slug", flat=True)
@@ -188,7 +186,7 @@ def test_resolve_attribute_values_non_assigned_to_node(
     AttributeVariant.objects.create(
         attribute=unassigned_variant_attribute,
         product_type=product_type,
-        sort_otarder=0,
+        sort_order=0,
     )
 
     assert get_product_attributes(product).count() == 1

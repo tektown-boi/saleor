@@ -806,7 +806,7 @@ def test_update_product_clean_boolean_attribute_value(
     )
 
     product_attr = get_product_attributes(product).get(id=boolean_attribute.id)
-    assert product_attr.values.count() == 1
+    assert get_product_attribute_values(product, product_attr).count() == 1
 
     variables = {
         "productId": product_id,
@@ -830,7 +830,7 @@ def test_update_product_clean_boolean_attribute_value(
         "values": [],
     }
     assert expected_att_data in attributes
-    assert product_attr.values.count() == 0
+    assert get_product_attribute_values(product, product_attr).count() == 0
 
 
 def test_update_product_clean_file_attribute_value(

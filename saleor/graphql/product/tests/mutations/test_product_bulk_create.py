@@ -8,7 +8,7 @@ import graphene
 import pytest
 import pytz
 
-from .....attribute.utils import get_product_attributes
+from .....attribute.utils import get_product_attribute_values, get_product_attributes
 from .....product.error_codes import ProductBulkCreateErrorCode
 from .....product.models import Product
 from .....product.tests.utils import create_image
@@ -618,9 +618,7 @@ def test_product_bulk_create_with_attributes(
         product_attributes = get_product_attributes(product)
         assert len(product_attributes) == 2
         assert product_attributes[0] == color_attr
-        assert (
-            color_attr.productvalueassignment.filter(product_id=product.id).count() == 1
-        )
+        assert get_product_attribute_values(product, color_attr).count() == 1
 
 
 def test_product_bulk_create_with_attributes_using_external_refs(
@@ -695,9 +693,7 @@ def test_product_bulk_create_with_attributes_using_external_refs(
         first_attribute_assignment = attributes[0]
         assert len(attributes) == 2
         assert first_attribute_assignment == color_attr
-        assert (
-            color_attr.productvalueassignment.filter(product_id=product.id).count() == 1
-        )
+        assert get_product_attribute_values(product, color_attr).count() == 1
 
 
 def test_product_bulk_create_with_attributes_and_create_new_value_with_external_ref(
@@ -771,7 +767,7 @@ def test_product_bulk_create_with_attributes_and_create_new_value_with_external_
     first_attribute_assignment = attributes[0]
     assert len(attributes) == 1
     assert first_attribute_assignment == color_attr
-    assert color_attr.productvalueassignment.filter(product_id=product.id).count() == 1
+    assert get_product_attribute_values(product, color_attr).count() == 1
 
 
 def test_product_bulk_create_return_error_when_attribute_id_and_external_ref_provided(
