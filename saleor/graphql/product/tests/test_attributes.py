@@ -1372,6 +1372,7 @@ def test_sort_product_attribute_values(
     staff_api_client.user.user_permissions.add(permission_manage_products)
 
     product_type = product.product_type
+
     product_type.product_attributes.clear()
     product_type.product_attributes.add(product_type_page_reference_attribute)
 
