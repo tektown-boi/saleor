@@ -65,7 +65,7 @@ class AttrValuesInput:
 
 
 T_INSTANCE = Union[
-    product_models.Product, product_models.ProductVariant, page_models.Page
+    product_models.ProductVariant, product_models.Product, page_models.Page
 ]
 T_INPUT_MAP = List[Tuple[attribute_models.Attribute, AttrValuesInput]]
 T_ERROR_DICT = Dict[Tuple[str, str], List]
@@ -175,7 +175,7 @@ class AttributeAssignmentMixin:
         lookup_field: str,
         value,
     ):
-        assignment = instance.attributes.filter(
+        assignment = instance.attributes.filter(  # type: ignore[misc]
             assignment__attribute=attribute, **{f"values__{lookup_field}": value}
         ).first()
         return (
@@ -434,7 +434,7 @@ class AttributeAssignmentMixin:
 
         # drop attribute assignment model when values are unassigned from instance
         if clean_assignment:
-            instance.attributes.filter(
+            instance.attributes.filter(  # type: ignore[misc]
                 assignment__attribute_id__in=clean_assignment
             ).delete()
 
@@ -794,10 +794,16 @@ class ProductAttributeAssignmentMixin(AttributeAssignmentMixin):
         lookup_field: str,
         value,
     ):
-        return get_product_attribute_values(instance, attribute).first()
+        return get_product_attribute_values(
+            instance, attribute  # type: ignore[arg-type]
+        ).first()
 
     @classmethod
-    def save(cls, instance: T_INSTANCE, cleaned_input: T_INPUT_MAP):
+    def save(
+        cls,
+        instance: T_INSTANCE,
+        cleaned_input: T_INPUT_MAP,
+    ):
         """Save the cleaned input into the database against the given instance.
 
         Note: this should always be ran inside a transaction.
@@ -853,7 +859,9 @@ class ProductAttributeAssignmentMixin(AttributeAssignmentMixin):
 
         # drop attribute assignment model when values are unassigned from instance
         if clean_assignment:
-            disassociate_attributes_from_instance(instance, *clean_assignment)
+            disassociate_attributes_from_instance(
+                instance, *clean_assignment  # type: ignore[arg-type]
+            )
 
 
 def get_variant_selection_attributes(qs: "QuerySet") -> "QuerySet":

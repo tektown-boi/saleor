@@ -96,12 +96,12 @@ def validate_product_type_owns_attribute(
 
     :raise: AssertionError
     """
-    allowed_attribute_ids = list(
+    allowed_attribute_ids: Set[int] = set(
         AttributeProduct.objects.filter(
             product_type_id=instance.product_type_id
         ).values_list("attribute_id", flat=True)
     )
-    attribute_ids_to_check = [attribute.pk for attribute in attributes]
+    attribute_ids_to_check: Set[int] = set([attribute.pk for attribute in attributes])
     found_associated_ids = allowed_attribute_ids & attribute_ids_to_check
     if found_associated_ids != attribute_ids_to_check:
         raise AssertionError(
