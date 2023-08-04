@@ -2605,7 +2605,6 @@ def test_update_product_with_multiselect_attribute_new_values_not_created(
     staff_api_client,
     product_with_multiple_values_attributes,
     permission_manage_products,
-    site_settings,
 ):
     # given
     query = MUTATION_UPDATE_PRODUCT
@@ -2614,18 +2613,19 @@ def test_update_product_with_multiselect_attribute_new_values_not_created(
     product_id = graphene.Node.to_global_id("Product", product.pk)
     attribute = get_product_attributes(product).first()
     attribute_id = graphene.Node.to_global_id("Attribute", attribute.pk)
-    attr_value_1 = get_product_attributes(product).first().values.all()[0]
-    attr_value_id_1 = graphene.Node.to_global_id("AttributeValue", attr_value_1.pk)
-    attr_value_name_1 = get_product_attributes(product).first().values.all()[0].name
-    print("Attr val 2", get_product_attributes(product).first().values.all())
-    attr_value_2 = get_product_attributes(product).first().values.all()[1]
+    attr_values = get_product_attribute_values(product, attribute)
 
+    attr_value_1 = attribute.values.all()
+    attr_value_id_1 = graphene.Node.to_global_id("AttributeValue", attr_value_1.pk)
+    attr_value_name_1 = attr_value_1.name
+
+    attr_value_2 = attr_values[1]
     attr_value_id_2 = graphene.Node.to_global_id("AttributeValue", attr_value_2.pk)
-    attr_value_name_2 = get_product_attributes(product).first().values.all()[1].name
+    attr_value_name_2 = attr_value_2.name
 
     value_count = AttributeValue.objects.count()
 
-    assert len(get_product_attributes(product).first().values.all()) == 2
+    assert len(attr_values) == 2
 
     variables = {
         "productId": product_id,
