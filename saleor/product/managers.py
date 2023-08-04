@@ -12,6 +12,7 @@ from django.db.models import (
     Exists,
     ExpressionWrapper,
     F,
+    FilteredRelation,
     OuterRef,
     Q,
     Subquery,
@@ -131,7 +132,11 @@ class ProductsQueryset(models.QuerySet):
                              to sort by.
         :param descending: The sorting direction.
         """
-        from ..attribute.models import AttributeProduct, AttributeValue
+        from ..attribute.models import (
+            AssignedProductAttributeValue,
+            AttributeProduct,
+            AttributeValue,
+        )
 
         qs: models.QuerySet = self
         # If the passed attribute ID is valid, execute the sorting
@@ -145,11 +150,17 @@ class ProductsQueryset(models.QuerySet):
 
         # Retrieve all the products' attribute data IDs (assignments) and
         # product types that have the given attribute associated to them
-        product_types_associated_to_attribute = AttributeProduct.objects.filter(
-            attribute_id=attribute_pk
-        ).values_list("product_type_id", flat=True)
+        associated_product_types = set(
+            AttributeProduct.objects.filter(attribute_id=attribute_pk).values_list(
+                "product_type_id", flat=True
+            )
+        )
+        association_ids = AssignedProductAttributeValue.objects.filter(
+            value__attribute_id=attribute_pk,
+            product__product_type_id__in=associated_product_types,
+        ).values_list("pk", flat=True)
 
-        if not product_types_associated_to_attribute:
+        if not associated_product_types:
             qs = qs.annotate(
                 concatenated_values_order=Value(
                     None, output_field=models.IntegerField()
@@ -159,6 +170,12 @@ class ProductsQueryset(models.QuerySet):
 
         else:
             qs = qs.annotate(
+                # Contains to retrieve the attribute data (singular) of each product
+                # Refer to `AttributeProduct`.
+                filtered_attribute=FilteredRelation(
+                    relation_name="attributevalues",
+                    condition=Q(attributevalues__in=association_ids),
+                ),
                 # Implicit `GROUP BY` required for the `StringAgg` aggregation
                 grouped_ids=Count("id"),
                 # String aggregation of the attribute's values to efficiently sort them
@@ -167,16 +184,16 @@ class ProductsQueryset(models.QuerySet):
                     # the given attribute associated to its product type,
                     # then consider the concatenated values as empty (non-null).
                     When(
-                        Q(product_type_id__in=product_types_associated_to_attribute)
-                        & Q(attributevalues__isnull=True),
+                        Q(product_type_id__in=associated_product_types)
+                        & Q(filtered_attribute=None),
                         then=models.Value(""),
                     ),
                     default=StringAgg(
-                        F("attributevalues__value__name"),
+                        F("filtered_attribute__value__name"),
                         delimiter=",",
                         ordering=(
                             [
-                                f"attributevalues__value__{field_name}"
+                                f"filtered_attribute__value__{field_name}"
                                 for field_name in AttributeValue._meta.ordering or []
                             ]
                         ),

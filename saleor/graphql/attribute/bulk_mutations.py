@@ -61,9 +61,15 @@ class AttributeBulkDelete(ModelBulkDeleteMutation):
             Exists(assigned_variant_attrs.filter(variant_id=OuterRef("id")))
         )
 
+        attribute_product = models.AttributeProduct.objects.filter(
+            attribute_id__in=attribute_pks
+        )
+
         product_ids = product_models.Product.objects.filter(
-            Q(product_type__attributeproduct__attribute_id__in=attribute_pks)
-            | Q(Exists(variants.filter(product_id=OuterRef("id"))))
+            Exists(
+                attribute_product.filter(product_type_id=OuterRef("product_type_id"))
+            )
+            | Exists(variants.filter(product_id=OuterRef("id")))
         ).values_list("id", flat=True)
         return list(product_ids)
 
