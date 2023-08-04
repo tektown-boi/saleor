@@ -189,10 +189,10 @@ def test_prepare_products_relations_data(
     fields = set(
         ProductExportFields.HEADERS_TO_FIELDS_MAPPING["product_many_to_many"].values()
     )
-    attribute_ids = get_product_attributes(product_with_image).values_list(
-        "pk", flat=True
-    )
-    channel_ids = [channel_PLN.pk, str(channel_USD.pk)]
+    attribute_ids = [
+        str(attr.pk) for attr in get_product_attributes(product_with_image)
+    ]
+    channel_ids = [str(channel_PLN.pk), str(channel_USD.pk)]
 
     # when
     result = prepare_products_relations_data(qs, fields, attribute_ids, channel_ids)
@@ -212,6 +212,7 @@ def test_prepare_products_relations_data(
     expected_result = add_product_attribute_data_to_expected_data(
         expected_result, product_with_image, attribute_ids, pk
     )
+
     expected_result = add_channel_to_expected_product_data(
         expected_result, product_with_image, channel_ids, pk
     )
@@ -306,9 +307,7 @@ def test_prepare_products_relations_data_attribute_without_values(
 
     qs = Product.objects.all()
     fields = {"name"}
-    attribute_ids = [
-        attribute.pk,
-    ]
+    attribute_ids = [str(attribute.pk)]
 
     # when
     result = prepare_products_relations_data(qs, fields, attribute_ids, [])

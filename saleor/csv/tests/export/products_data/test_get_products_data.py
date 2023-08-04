@@ -444,6 +444,7 @@ def test_get_products_data_for_specified_warehouses_channels_and_attributes(
         product_data = add_product_attribute_data_to_expected_data(
             product_data, product, attribute_ids
         )
+
         product_data = add_channel_to_expected_product_data(
             product_data, product, channel_ids
         )

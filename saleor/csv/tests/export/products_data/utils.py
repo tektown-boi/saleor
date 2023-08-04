@@ -4,14 +4,15 @@ from .....core.utils.editorjs import clean_editor_js
 
 
 def add_product_attribute_data_to_expected_data(data, product, attribute_ids, pk=None):
-    for attribute in get_product_attributes(product).filter(id__in=attribute_ids):
+    for attribute in get_product_attributes(product):
         header = f"{attribute.slug} (product attribute)"
-        value_instance = get_product_attribute_values(product, attribute).first()
-        value = get_attribute_value(attribute, value_instance)
-        if pk:
-            data[pk][header] = value
-        else:
-            data[header] = value
+        if str(attribute.pk) in attribute_ids:
+            value_instance = get_product_attribute_values(product, attribute).first()
+            value = get_attribute_value(attribute, value_instance)
+            if pk:
+                data[pk][header] = value
+            else:
+                data[header] = value
     return data
 
 
