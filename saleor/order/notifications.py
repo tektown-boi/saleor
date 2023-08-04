@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from django.forms import model_to_dict
 
 from ..account.models import StaffNotificationRecipient
+from ..attribute.utils import get_product_attributes
 from ..core.notification.utils import get_site_context
 from ..core.notify_events import NotifyEventType
 from ..core.prices import quantize_price, quantize_price_fields
@@ -45,7 +46,7 @@ def get_default_images_payload(images: List[ProductMedia]):
     return {"first_image": first_image_payload, "images": images_payload}
 
 
-def get_product_attributes(product):
+def get_product_attributes_payload(product):
     attributes = get_product_attributes(product)
     attributes_payload = []
     for attr in attributes:
@@ -76,7 +77,7 @@ def get_product_payload(product: Product):
     images = [media for media in all_media if media.type == ProductMediaTypes.IMAGE]
     return {
         "id": to_global_id_or_none(product),
-        "attributes": get_product_attributes(product),
+        "attributes": get_product_attributes_payload(product),
         "weight": str(product.weight or ""),
         **get_default_images_payload(images),
     }
