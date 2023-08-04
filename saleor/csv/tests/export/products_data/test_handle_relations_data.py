@@ -188,9 +188,7 @@ def test_prepare_products_relations_data(
     fields = set(
         ProductExportFields.HEADERS_TO_FIELDS_MAPPING["product_many_to_many"].values()
     )
-    attribute_ids = [
-        attr.assignment.attribute.pk for attr in product_with_image.attributes.all()
-    ]
+    attribute_ids = [attr.pk for attr in get_product_attributes(product_with_image)]
     channel_ids = [channel_PLN.pk, str(channel_USD.pk)]
 
     # when

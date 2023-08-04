@@ -50,7 +50,6 @@ def disassociate_all_attributes_from_instance(
     This has to remove a FK to Attributes from Product instance and
     remove all value assignments related to that same product.
     """
-    instance.attributes.clear()
     AssignedProductAttributeValue.objects.filter(product_id=instance.pk).delete()
 
 
@@ -63,7 +62,6 @@ def disassociate_attributes_from_instance(
     This has to remove a FK to Attribute from Product instance and
     remove all value assignments related to that same product and attribute.
     """
-    instance.attributes.remove(*attributes)
     AssignedProductAttributeValue.objects.filter(
         product_id=instance.pk, value__attribute__in=attributes
     ).delete()
@@ -138,8 +136,6 @@ def _associate_attribute_to_instance(
     https://github.com/saleor/saleor/issues/12881
     """
     if isinstance(instance, Product):
-        instance.attributes.add(attribute)
-
         # Clear all assignments that don't match the values we'd like to assign
         AssignedProductAttributeValue.objects.filter(
             product_id=instance.pk, value__attribute=attribute

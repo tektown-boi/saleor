@@ -241,7 +241,6 @@ def get_default_order_payload(order: "Order", redirect_url: str = ""):
         "variant__product__media",
         "variant__media",
         "variant__product__attributes",
-        "variant__product__attributes__values",
     ).all()
     currency = order.currency
     quantize_price_fields(order, fields=ORDER_PRICE_FIELDS, currency=currency)

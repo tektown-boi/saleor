@@ -7,6 +7,7 @@ from django.db.models import Q
 
 from ....attribute import AttributeInputType, AttributeType
 from ....attribute import models as attribute_models
+from ....attribute.utils import get_product_attributes
 from ....core.tracing import traced_atomic_transaction
 from ....permission.enums import ProductPermissions, ProductTypePermissions
 from ....product import models
@@ -715,9 +716,9 @@ class ProductReorderAttributeValues(BaseReorderAttributeValuesMutation):
             attribute_id, only_type=Attribute, field="attribute_id"
         )
 
-        attribute_assignment = models.Product.objects.filter(
-            pk=instance.pk, attributes__pk=attribute_pk
-        ).exists()
+        attribute_assignment = (
+            get_product_attributes(instance).filter(pk=attribute_pk).exists()
+        )
 
         if not attribute_assignment:
             raise ValidationError(

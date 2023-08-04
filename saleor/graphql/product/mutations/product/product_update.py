@@ -69,7 +69,7 @@ class ProductUpdate(ProductCreate, ModelWithExtRefMutation):
             # Prefetches needed by AttributeAssignmentMixin and
             # associate_attribute_values_to_instance
             qs = cls.Meta.model.objects.prefetch_related(
-                "product_type__product_attributes__values",
+                "product_type__attribute__values",
                 "product_type__attributeproduct",
             )
             return cls.get_node_or_error(info, object_id, only_type="Product", qs=qs)

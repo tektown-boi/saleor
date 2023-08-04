@@ -18,7 +18,6 @@ PRODUCT_SEARCH_FIELDS = ["name", "description_plaintext"]
 PRODUCT_FIELDS_TO_PREFETCH = [
     "variants__attributes__values",
     "variants__attributes",
-    "attributes__values",
 ]
 
 PRODUCTS_BATCH_SIZE = 300

@@ -175,7 +175,7 @@ class AttributeAssignmentMixin:
         lookup_field: str,
         value,
     ):
-        assignment = instance.attributes.filter(  # type: ignore[misc]
+        assignment = instance.attributes.filter(  # type: ignore[union-attr]
             assignment__attribute=attribute, **{f"values__{lookup_field}": value}
         ).first()
         return (
@@ -434,7 +434,7 @@ class AttributeAssignmentMixin:
 
         # drop attribute assignment model when values are unassigned from instance
         if clean_assignment:
-            instance.attributes.filter(  # type: ignore[misc]
+            instance.attributes.filter(  # type: ignore[union-attr]
                 assignment__attribute_id__in=clean_assignment
             ).delete()
 

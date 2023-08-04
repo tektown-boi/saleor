@@ -62,7 +62,7 @@ class AttributeBulkDelete(ModelBulkDeleteMutation):
         )
 
         product_ids = product_models.Product.objects.filter(
-            Q(attributes__in=attribute_pks)
+            Q(product_type__attributeproduct__attribute_id__in=attribute_pks)
             | Q(Exists(variants.filter(product_id=OuterRef("id"))))
         ).values_list("id", flat=True)
         return list(product_ids)
