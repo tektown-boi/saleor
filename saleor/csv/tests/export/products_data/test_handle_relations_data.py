@@ -4,6 +4,7 @@ from unittest.mock import patch
 from .....attribute.models import Attribute, AttributeValue
 from .....attribute.utils import (
     associate_attribute_values_to_instance,
+    disassociate_attributes_from_instance,
     get_product_attributes,
 )
 from .....product.models import Product, ProductMedia, ProductVariant, VariantMedia
@@ -250,8 +251,7 @@ def test_prepare_products_relations_data_only_attributes_ids(
     qs = Product.objects.all()
     fields = {"name"}
     attribute_ids = [
-        str(attr.assignment.attribute.pk)
-        for attr in product_with_image.attributes.all()
+        str(attr.pk) for attr in get_product_attributes(product_with_image)
     ]
     channel_ids = []
 
@@ -295,15 +295,12 @@ def test_prepare_products_relations_data_only_channel_ids(
 
 def test_prepare_products_relations_data_attribute_without_values(
     product,
-    channel_USD,
-    channel_PLN,
 ):
     # given
     pk = product.pk
 
-    attribute_product = get_product_attributes(product).first()
-    attribute_product.values.clear()
-    attribute = attribute_product.assignment.attribute
+    attribute = get_product_attributes(product).first()
+    disassociate_attributes_from_instance(product, attribute)
 
     qs = Product.objects.all()
     fields = {"name"}

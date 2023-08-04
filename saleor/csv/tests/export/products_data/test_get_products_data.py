@@ -6,7 +6,7 @@ from measurement.measures import Weight
 from .....attribute.models import Attribute, AttributeValue
 from .....attribute.utils import (
     associate_attribute_values_to_instance,
-    get_product_attributes,
+    disassociate_attributes_from_instance,
 )
 from .....channel.models import Channel
 from .....product.models import Product, ProductVariant, VariantMedia
@@ -413,11 +413,7 @@ def test_get_products_data_for_specified_warehouses_channels_and_attributes(
     associate_attribute_values_to_instance(product, numeric_attribute, numeric_value_2)
 
     # create assigned product without values
-    associate_attribute_values_to_instance(
-        product, color_attribute, color_attribute.values.first()
-    )
-    assigned_product = get_product_attributes(product).get(color_attribute)
-    assigned_product.values.clear()
+    disassociate_attributes_from_instance(product, color_attribute)
 
     # add swatch attribute
     swatch_value_1 = swatch_attribute.values.first()
