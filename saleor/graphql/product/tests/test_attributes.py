@@ -189,7 +189,11 @@ def test_resolve_attribute_values_non_assigned_to_node(
         sort_order=0,
     )
 
-    assert get_product_attributes(product).count() == 1
+    # All attributes assigned for the same product type should be returned
+    assert get_product_attributes(product).count() == 2
+
+    # no additional values should be added
+    assert product.attributevalues.count() == 1
     assert variant.attributes.count() == 1
 
     product = get_graphql_content(api_client.post_graphql(query, variables))["data"][

@@ -30,6 +30,12 @@ def get_product_attributes(product: Product):
     ).order_by("attributeproduct__sort_order")
 
 
+def get_all_product_attribute_values(product: Product):
+    return AttributeValue.objects.filter(
+        productvalueassignment__product_id=product.pk
+    ).order_by("productvalueassignment__sort_order")
+
+
 def get_product_attribute_values(product: Product, attribute: Attribute):
     """Get product attributes filtered by product_type.
 
