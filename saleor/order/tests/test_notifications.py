@@ -121,7 +121,7 @@ def test_get_order_line_payload(order_line):
                         "slug": value.slug,
                         "file_url": value.file_url,
                     }
-                    for value in get_product_attribute_values(product, attributes)
+                    for value in get_product_attribute_values(product, attr)
                 ],
             }
         )
