@@ -110,7 +110,7 @@ def test_sort_page_attribute_values(
     for attr, expected_pk in zip(gql_attribute_values, expected_order):
         db_type, value_pk = graphene.Node.from_global_id(attr["id"])
         assert db_type == "AttributeValue"
-        assert value_pk == expected_pk
+        assert int(value_pk) == expected_pk
 
 
 def test_sort_page_attribute_values_invalid_attribute_id(

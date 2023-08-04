@@ -3535,8 +3535,7 @@ def test_product_and_attribute_translation(user_api_client, product, channel_USD
     product.translations.create(
         language_code="pl", name="Produkt", description=description
     )
-    assigned_attribute = get_product_attributes(product).first()
-    attribute = assigned_attribute.attribute
+    attribute = get_product_attributes(product).first()
     attribute.translations.create(language_code="pl", name="Kolor")
 
     query = """

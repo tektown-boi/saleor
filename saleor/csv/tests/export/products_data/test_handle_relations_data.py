@@ -189,7 +189,9 @@ def test_prepare_products_relations_data(
     fields = set(
         ProductExportFields.HEADERS_TO_FIELDS_MAPPING["product_many_to_many"].values()
     )
-    attribute_ids = [attr.pk for attr in get_product_attributes(product_with_image)]
+    attribute_ids = get_product_attributes(product_with_image).values_list(
+        "pk", flat=True
+    )
     channel_ids = [channel_PLN.pk, str(channel_USD.pk)]
 
     # when
@@ -304,7 +306,9 @@ def test_prepare_products_relations_data_attribute_without_values(
 
     qs = Product.objects.all()
     fields = {"name"}
-    attribute_ids = [str(attribute.pk)]
+    attribute_ids = [
+        attribute.pk,
+    ]
 
     # when
     result = prepare_products_relations_data(qs, fields, attribute_ids, [])
