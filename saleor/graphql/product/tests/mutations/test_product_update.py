@@ -2615,7 +2615,7 @@ def test_update_product_with_multiselect_attribute_new_values_not_created(
     attribute_id = graphene.Node.to_global_id("Attribute", attribute.pk)
     attr_values = get_product_attribute_values(product, attribute)
 
-    attr_value_1 = attribute.values.all()
+    attr_value_1 = attr_values[0]
     attr_value_id_1 = graphene.Node.to_global_id("AttributeValue", attr_value_1.pk)
     attr_value_name_1 = attr_value_1.name
 
