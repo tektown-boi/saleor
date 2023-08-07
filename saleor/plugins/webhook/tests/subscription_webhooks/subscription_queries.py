@@ -1378,6 +1378,7 @@ FULFILLMENT_APPROVED = (
     subscription{
       event{
         ...on FulfillmentApproved{
+          notifyCustomer
           fulfillment{
             ...FulfillmentDetails
           }

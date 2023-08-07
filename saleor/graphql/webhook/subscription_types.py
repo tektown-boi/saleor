@@ -1197,10 +1197,25 @@ class FulfillmentCanceled(SubscriptionObjectType, FulfillmentBase):
 
 class FulfillmentApproved(SubscriptionObjectType, FulfillmentBase):
     class Meta:
-        root_type = "Fulfillment"
-        enable_dry_run = True
+        root_type = None
+        enable_dry_run = False
         interfaces = (Event,)
         description = "Event sent when fulfillment is approved." + ADDED_IN_37
+
+    @staticmethod
+    def resolve_fulfillment(root, info: ResolveInfo):
+        _, data = root
+        return data["fulfillment"]
+
+    @staticmethod
+    def resolve_order(root, info: ResolveInfo):
+        _, data = root
+        return data["order"]
+
+    @staticmethod
+    def resolve_notify_customer(root, _info: ResolveInfo):
+        _, data = root
+        return data["notify_customer"]
 
 
 class FulfillmentMetadataUpdated(SubscriptionObjectType, FulfillmentBase):
