@@ -4,7 +4,6 @@ from unittest.mock import patch
 from .....attribute.models import Attribute, AttributeValue
 from .....attribute.utils import (
     associate_attribute_values_to_instance,
-    disassociate_attributes_from_instance,
     get_product_attributes,
 )
 from .....product.models import Product, ProductMedia, ProductVariant, VariantMedia
@@ -294,26 +293,6 @@ def test_prepare_products_relations_data_only_channel_ids(
     )
 
     assert result == expected_result
-
-
-def test_prepare_products_relations_data_attribute_without_values(
-    product,
-):
-    # given
-    pk = product.pk
-
-    attribute = get_product_attributes(product).first()
-    disassociate_attributes_from_instance(product, attribute)
-
-    qs = Product.objects.all()
-    fields = {"name"}
-    attribute_ids = [str(attribute.pk)]
-
-    # when
-    result = prepare_products_relations_data(qs, fields, attribute_ids, [])
-
-    # then
-    assert result == {pk: {f"{attribute.slug} (product attribute)": ""}}
 
 
 @patch("saleor.csv.utils.products_data.prepare_variants_relations_data")

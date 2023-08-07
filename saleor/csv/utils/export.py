@@ -165,6 +165,7 @@ def export_products_in_batches(
 
     for batch_pks in queryset_in_batches(queryset):
         product_batch = Product.objects.filter(pk__in=batch_pks).prefetch_related(
+            "attributevalues",
             "variants",
             "collections",
             "media",

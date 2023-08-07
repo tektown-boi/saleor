@@ -637,11 +637,8 @@ def test_append_to_file_for_xlsx(user_export_file, tmpdir, media_root):
         data.append(row)
 
     assert headers == expected_headers
-    assert list(export_data[0].values()) in data
-    row2 = list(export_data[1].values())
-    # add string with space for collections column
-    row2.append(" ")
-    assert row2 in data
+    assert list(export_data[0].values()) == data[0]
+    assert list(export_data[1].values().append(" ")) == data[1]
 
     temp_file.close()
     shutil.rmtree(tmpdir)
