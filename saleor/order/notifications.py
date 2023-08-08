@@ -1,3 +1,4 @@
+from collections import defaultdict
 from decimal import Decimal
 from typing import TYPE_CHECKING, Iterable, List, Optional
 from urllib.parse import urlencode
@@ -5,7 +6,6 @@ from urllib.parse import urlencode
 from django.forms import model_to_dict
 
 from ..account.models import StaffNotificationRecipient
-from ..attribute.utils import get_product_attributes
 from ..core.notification.utils import get_site_context
 from ..core.notify_events import NotifyEventType
 from ..core.prices import quantize_price, quantize_price_fields
@@ -47,7 +47,11 @@ def get_default_images_payload(images: List[ProductMedia]):
 
 
 def get_product_attributes_payload(product):
-    attributes = get_product_attributes(product)
+    attributes = [ap.attribute for ap in product.product_type.attributeproduct.all()]
+    values_map = defaultdict(list)
+    for av in product.attributevalues.all():
+        values_map[av.value.attribute_id].append(av.value)
+
     attributes_payload = []
     for attr in attributes:
         attributes_payload.append(
@@ -65,7 +69,7 @@ def get_product_attributes_payload(product):
                         "slug": value.slug,
                         "file_url": value.file_url,
                     }
-                    for value in attr.values.all()
+                    for value in values_map[attr.id]
                 ],
             }
         )
@@ -239,8 +243,10 @@ def get_default_order_payload(order: "Order", redirect_url: str = ""):
     tax = order.total_gross_amount - order.total_net_amount or Decimal(0)
 
     lines = order.lines.prefetch_related(
-        "variant__product__media",
         "variant__media",
+        "variant__product__media",
+        "variant__product__attributevalues__value",
+        "variant__product__product_type__attributeproduct__attribute",
     ).all()
     currency = order.currency
     quantize_price_fields(order, fields=ORDER_PRICE_FIELDS, currency=currency)
