@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
@@ -5,7 +6,6 @@ import graphene
 from prices import Money
 
 from ..attribute import AttributeEntityType, AttributeInputType
-from ..attribute.utils import get_product_attribute_values, get_product_attributes
 from ..checkout import base_calculations
 from ..checkout.fetch import fetch_checkout_lines
 from ..core.prices import quantize_price
@@ -123,7 +123,12 @@ def serialize_product_attributes(product: "Product") -> List[Dict]:
         reference_id = graphene.Node.to_global_id(attribute.entity_type, reference_pk)
         return reference_id
 
-    for attribute in get_product_attributes(product):
+    attributes = [ap.attribute for ap in product.product_type.attributeproduct.all()]
+    values_map = defaultdict(list)
+    for av in product.attributevalues.all():
+        values_map[av.value.attribute_id].append(av.value)
+
+    for attribute in attributes:
         attr_id = graphene.Node.to_global_id("Attribute", attribute.id)
         attr_data: Dict[Any, Any] = {
             "name": attribute.name,
@@ -135,8 +140,7 @@ def serialize_product_attributes(product: "Product") -> List[Dict]:
             "values": [],
         }
 
-        attr_values = get_product_attribute_values(product, attribute)
-        for attr_value in attr_values:
+        for attr_value in values_map[attribute.id]:
             attr_slug = attr_value.slug
             value: Dict[
                 str, Optional[Union[str, datetime, date, bool, Dict[str, Any]]]
