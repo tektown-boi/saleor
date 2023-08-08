@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, List
+from collections import defaultdict
+from typing import TYPE_CHECKING, List, Union
 
 from django.conf import settings
 from django.contrib.postgres.search import SearchQuery, SearchRank
@@ -6,7 +7,6 @@ from django.db.models import F, Q, Value, prefetch_related_objects
 
 from ..attribute import AttributeInputType
 from ..attribute.models import Attribute
-from ..attribute.utils import get_product_attribute_values, get_product_attributes
 from ..core.postgres import FlatConcatSearchVector, NoValidationSearchVector
 from ..core.utils.editorjs import clean_editor_js
 from .models import Product
@@ -18,6 +18,8 @@ PRODUCT_SEARCH_FIELDS = ["name", "description_plaintext"]
 PRODUCT_FIELDS_TO_PREFETCH = [
     "variants__attributes__values",
     "variants__attributes",
+    "attributevalues__value",
+    "product_type__attributeproduct__attribute",
 ]
 
 PRODUCTS_BATCH_SIZE = 300
@@ -110,13 +112,18 @@ def generate_attributes_search_vector_value(
     and `assignment__attribute`.
     """
 
-    attributes = get_product_attributes(product)[
-        : settings.PRODUCT_MAX_INDEXED_ATTRIBUTES
+    attributes_qs = product.product_type.attributeproduct.all()
+    attributes = [
+        ap.attribute for ap in attributes_qs[: settings.PRODUCT_MAX_INDEXED_ATTRIBUTES]
     ]
     search_vectors = []
 
+    values_map = defaultdict(list)
+    for av in product.attributevalues.all():
+        values_map[av.value.attribute_id].append(av.value)
+
     for attribute in attributes:
-        values = get_product_attribute_values(product, attribute)[
+        values = values_map[attribute.pk][
             : settings.PRODUCT_MAX_INDEXED_ATTRIBUTE_VALUES
         ]
 
@@ -143,7 +150,7 @@ def generate_attributes_search_vector_value_with_assignment(
 
 
 def get_search_vectors_for_values(
-    attribute: Attribute, values: "QuerySet"
+    attribute: Attribute, values: Union[List, "QuerySet"]
 ) -> List[NoValidationSearchVector]:
     search_vectors = []
 
