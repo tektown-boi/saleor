@@ -7,7 +7,10 @@ from django.core.files import File
 from measurement.measures import Weight
 from prices import Money, fixed_discount
 
-from ...attribute.utils import get_product_attribute_values, get_product_attributes
+from ...attribute.tests.model_helpers import (
+    get_product_attribute_values,
+    get_product_attributes,
+)
 from ...core.notify_events import NotifyEventType
 from ...core.prices import quantize_price
 from ...core.tests.utils import get_site_context_payload

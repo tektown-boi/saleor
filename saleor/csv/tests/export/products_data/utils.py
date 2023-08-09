@@ -1,14 +1,19 @@
+from collections import defaultdict
+
 from .....attribute import AttributeInputType
-from .....attribute.utils import get_product_attribute_values, get_product_attributes
 from .....core.utils.editorjs import clean_editor_js
 
 
 def add_product_attribute_data_to_expected_data(data, product, attribute_ids, pk=None):
-    for attribute in get_product_attributes(product):
+    attributes = [ap.attribute for ap in product.product_type.attributeproduct.all()]
+    values_map = defaultdict(list)
+    for av in product.attributevalues.all():
+        values_map[av.value.attribute_id].append(av.value)
+
+    for attribute in attributes:
         header = f"{attribute.slug} (product attribute)"
-        value_instance = get_product_attribute_values(product, attribute).first()
+        value_instance = values_map[attribute.id][0]
         if str(attribute.pk) in attribute_ids and value_instance:
-            value_instance = get_product_attribute_values(product, attribute).first()
             value = get_attribute_value(attribute, value_instance)
             if pk:
                 data[pk][header] = value

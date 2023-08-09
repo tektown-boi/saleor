@@ -1,7 +1,8 @@
 import pytest
 
 from ...product.models import ProductType
-from ..utils import associate_attribute_values_to_instance, get_product_attributes
+from ..utils import associate_attribute_values_to_instance
+from .model_helpers import get_product_attributes
 
 
 def test_associate_attribute_to_non_product_instance(color_attribute):

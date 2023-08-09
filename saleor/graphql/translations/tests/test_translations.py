@@ -6,11 +6,11 @@ import pytest
 from django.utils.functional import SimpleLazyObject
 from freezegun import freeze_time
 
-from ....attribute.utils import (
-    associate_attribute_values_to_instance,
+from ....attribute.tests.model_helpers import (
     get_product_attribute_values,
     get_product_attributes,
 )
+from ....attribute.utils import associate_attribute_values_to_instance
 from ....permission.models import Permission
 from ....tests.utils import dummy_editorjs
 from ....webhook.event_types import WebhookEventAsyncType

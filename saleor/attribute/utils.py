@@ -42,17 +42,6 @@ def get_product_attribute_values(product: Product, attribute: Attribute):
     ).order_by("productvalueassignment__sort_order")
 
 
-def disassociate_all_attributes_from_instance(
-    instance: Product,
-) -> None:
-    """Remove all attribute assigned to an instance.
-
-    This has to remove a FK to Attributes from Product instance and
-    remove all value assignments related to that same product.
-    """
-    AssignedProductAttributeValue.objects.filter(product_id=instance.pk).delete()
-
-
 def disassociate_attributes_from_instance(
     instance: Product,
     *attributes: Attribute,

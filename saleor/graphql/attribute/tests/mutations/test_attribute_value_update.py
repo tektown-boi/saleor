@@ -8,11 +8,11 @@ from django.utils.text import slugify
 from freezegun import freeze_time
 
 from .....attribute.error_codes import AttributeErrorCode
-from .....attribute.utils import (
-    associate_attribute_values_to_instance,
+from .....attribute.tests.model_helpers import (
     get_product_attribute_values,
     get_product_attributes,
 )
+from .....attribute.utils import associate_attribute_values_to_instance
 from .....core.utils.json_serializer import CustomJsonEncoder
 from .....webhook.event_types import WebhookEventAsyncType
 from .....webhook.payloads import generate_meta, generate_requestor

@@ -5,11 +5,11 @@ import pytest
 from django.utils import timezone
 
 from .....attribute.models import Attribute, AttributeValue
-from .....attribute.utils import (
-    associate_attribute_values_to_instance,
+from .....attribute.tests.model_helpers import (
     get_product_attribute_values,
     get_product_attributes,
 )
+from .....attribute.utils import associate_attribute_values_to_instance
 from .....product import ProductTypeKind
 from .....product.models import Product, ProductChannelListing, ProductType
 from .....warehouse.models import Allocation, Reservation, Stock, Warehouse

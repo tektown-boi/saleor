@@ -4,11 +4,11 @@ import graphene
 import pytest
 from graphene import Node
 
-from .....attribute.utils import (
-    associate_attribute_values_to_instance,
+from .....attribute.tests.model_helpers import (
     get_product_attribute_values,
     get_product_attributes,
 )
+from .....attribute.utils import associate_attribute_values_to_instance
 from .....core.taxes import TaxType
 from .....plugins.manager import PluginsManager
 from .....product.models import ProductMedia, ProductTranslation

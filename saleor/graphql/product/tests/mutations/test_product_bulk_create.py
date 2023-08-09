@@ -8,7 +8,10 @@ import graphene
 import pytest
 import pytz
 
-from .....attribute.utils import get_product_attribute_values, get_product_attributes
+from .....attribute.tests.model_helpers import (
+    get_product_attribute_values,
+    get_product_attributes,
+)
 from .....product.error_codes import ProductBulkCreateErrorCode
 from .....product.models import Product
 from .....product.tests.utils import create_image

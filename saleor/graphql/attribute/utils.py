@@ -19,7 +19,6 @@ from ...attribute import models as attribute_models
 from ...attribute.utils import (
     associate_attribute_values_to_instance,
     disassociate_attributes_from_instance,
-    get_product_attribute_values,
 )
 from ...core.utils import generate_unique_slug, prepare_unique_slug
 from ...core.utils.editorjs import clean_editor_js
@@ -794,8 +793,10 @@ class ProductAttributeAssignmentMixin(AttributeAssignmentMixin):
         lookup_field: str,
         value,
     ):
-        return get_product_attribute_values(
-            instance, attribute  # type: ignore[arg-type]
+        return attribute_models.AssignedProductAttributeValue.objects.filter(
+            value__atribute_id=attribute.pk,
+            product_id=instance.pk,
+            **{f"value__{lookup_field}": value},
         ).first()
 
     @classmethod

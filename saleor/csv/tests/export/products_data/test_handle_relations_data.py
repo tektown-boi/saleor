@@ -2,10 +2,8 @@ from datetime import datetime
 from unittest.mock import patch
 
 from .....attribute.models import Attribute, AttributeValue
-from .....attribute.utils import (
-    associate_attribute_values_to_instance,
-    get_product_attributes,
-)
+from .....attribute.tests.model_helpers import get_product_attributes
+from .....attribute.utils import associate_attribute_values_to_instance
 from .....product.models import Product, ProductMedia, ProductVariant, VariantMedia
 from .....tests.utils import dummy_editorjs
 from .....warehouse.models import Warehouse

@@ -5,17 +5,17 @@ import pytest
 
 from ....attribute import AttributeInputType, AttributeType
 from ....attribute.models import (
+    AssignedProductAttributeValue,
     Attribute,
     AttributeProduct,
     AttributeValue,
     AttributeVariant,
 )
-from ....attribute.utils import (
-    associate_attribute_values_to_instance,
-    disassociate_all_attributes_from_instance,
+from ....attribute.tests.model_helpers import (
     get_product_attribute_values,
     get_product_attributes,
 )
+from ....attribute.utils import associate_attribute_values_to_instance
 from ....product import ProductTypeKind
 from ....product.error_codes import ProductErrorCode
 from ....product.models import Product, ProductType
@@ -223,7 +223,7 @@ def test_resolve_assigned_attribute_without_values(
     variant = product.variants.get()
 
     # Remove all attributes and values from the product and its variant
-    disassociate_all_attributes_from_instance(product)
+    AssignedProductAttributeValue.objects.filter(product_id=product.pk).delete()
     variant.attributesrelated.clear()
 
     # Retrieve the product and variant's attributes

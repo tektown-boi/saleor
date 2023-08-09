@@ -14,11 +14,11 @@ from .....attribute.models import (
     Attribute,
     AttributeValue,
 )
-from .....attribute.utils import (
-    associate_attribute_values_to_instance,
+from .....attribute.tests.model_helpers import (
     get_product_attribute_values,
     get_product_attributes,
 )
+from .....attribute.utils import associate_attribute_values_to_instance
 from .....core.taxes import TaxType
 from .....graphql.core.enums import AttributeErrorCode
 from .....graphql.tests.utils import get_graphql_content
