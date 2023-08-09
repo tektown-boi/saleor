@@ -20,6 +20,20 @@ class Migration(migrations.Migration):
         ("attribute", "0029_alter_attribute_unit"),
     ]
 
+    state_operations = [
+        migrations.RemoveField(
+            model_name="attributeproduct",
+            name="assigned_products",
+        ),
+        migrations.RemoveField(
+            model_name="assignedproductattributevalue",
+            name="assignment",
+        ),
+        migrations.DeleteModel(
+            name="AssignedProductAttribute",
+        ),
+    ]
+
     operations = [
         migrations.AddField(
             model_name="assignedproductattributevalue",
@@ -41,21 +55,22 @@ class Migration(migrations.Migration):
                 to="product.product",
             ),
         ),
-        migrations.RemoveField(
-            model_name="attributeproduct",
-            name="assigned_products",
-        ),
         migrations.AlterUniqueTogether(
             name="assignedproductattributevalue",
             unique_together={("value", "new_product")},
         ),
-        migrations.RemoveField(
+        migrations.AlterField(
             model_name="assignedproductattributevalue",
             name="assignment",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="productvalueassignment",
+                to="product.Product",
+                null=True,
+                blank=True,
+            ),
         ),
-        migrations.DeleteModel(
-            name="AssignedProductAttribute",
-        ),
+        migrations.SeparateDatabaseAndState(state_operations=state_operations),
         migrations.RenameField(
             model_name="assignedproductattributevalue",
             old_name="new_product",
